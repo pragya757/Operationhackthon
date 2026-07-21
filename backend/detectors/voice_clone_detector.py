@@ -68,8 +68,9 @@ LIVE_SPEC_AI_THRESHOLD   = float(os.getenv("LIVE_SPEC_AI_THRESHOLD",   "0.40"))
 # Both conditions must be satisfied for a Safe override:
 #   1. Voice Clone score is BELOW this ceiling (weak positive only)
 #   2. Spectrogram CNN predicts Human with very high confidence
-# Default: 0.70  (configurable via LIVE_CLONE_SAFE_MAX_CONFIDENCE env var)
-LIVE_CLONE_SAFE_MAX_CONFIDENCE = float(os.getenv("LIVE_CLONE_SAFE_MAX_CONFIDENCE", "0.70"))
+# Default: 0.50  (configurable via LIVE_CLONE_SAFE_MAX_CONFIDENCE env var)
+# Ensures that any audio where Voice Clone engine predicts Voice Clone (score >= 0.50) is NOT overridden to Safe.
+LIVE_CLONE_SAFE_MAX_CONFIDENCE = float(os.getenv("LIVE_CLONE_SAFE_MAX_CONFIDENCE", "0.50"))
 
 # Minimum Spectrogram CNN Human confidence required for Case 5 override.
 # A low-confidence Human prediction from the CNN is not trusted enough
@@ -552,22 +553,26 @@ def analyze_audio(audio_path: str, mode: str = "upload") -> Dict[str, Any]:
         policy_case = 5
         final_fusion_score = spec_score
     elif prediction == "Human":
-        final_risk_level = "Safe"
-        if spec_display_prediction == "Suspicious Acoustic Pattern":
-            final_fusion_score = clone_fusion_score
+        if mode == "upload" and (spec_display_prediction == "AI Generated" or spec_score >= SPEC_CONFIDENCE_THRESHOLD):
+            final_risk_level = "High Risk" if spec_score >= FUSION_HIGH_RISK_THRESHOLD else "Suspicious"
+            policy_case = 6
+        elif spec_display_prediction == "Suspicious Acoustic Pattern":
             policy_case = 2
+            if clone_fusion_score >= 0.35 or spec_score >= 0.45 or final_fusion_score >= 0.35:
+                final_risk_level = "Suspicious"
+            else:
+                final_risk_level = "Safe"
+                final_fusion_score = clone_fusion_score
         else:
+            final_risk_level = "Safe"
             policy_case = 1
     else:
         if spec_display_prediction == "AI Generated":
             final_risk_level = "High Risk"
             policy_case = 3
         else:
+            final_risk_level = "Suspicious"
             policy_case = 4
-            if final_fusion_score < FUSION_SUSPICIOUS_THRESHOLD:
-                final_risk_level = "Safe"
-            else:
-                final_risk_level = "Suspicious"
 
     # ================ THREAT FUSION ================
     # Mode           : LIVE / UPLOAD
@@ -631,6 +636,8 @@ def analyze_audio(audio_path: str, mode: str = "upload") -> Dict[str, Any]:
         combined_explanations.append(f"Voice Clone engine detected synthetic speech (score {clone_fusion_score*100:.1f}%). Spectrogram analysis did not independently confirm synthesis ({spec_score*100:.1f}%) — classified as Suspicious.")
     elif policy_case == 5:
         combined_explanations.append(f"Voice Clone engine flagged synthesis artifacts (score {clone_fusion_score*100:.1f}%), but this is overridden by the Spectrogram CNN verifying authentic human speech ({(1.0 - spec_score)*100:.1f}% confidence). Pretrained voice clone models often over-fire on compressed WebRTC/WhatsApp call audio due to codec distortion — classified as Safe.")
+    elif policy_case == 6:
+        combined_explanations.append(f"Spectrogram CNN detected synthetic spectral artifacts ({spec_score*100:.1f}%) in uploaded audio — classified as {final_risk_level} AI Voice Clone.")
     else:
         combined_explanations.append(f"Voice Clone engine score {clone_fusion_score*100:.1f}%, Spectrogram score {spec_score*100:.1f}%.")
 
