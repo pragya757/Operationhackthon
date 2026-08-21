@@ -16,9 +16,18 @@
 
 ### 🎙️ Audio & Speech Forensics (Voice Clone Detection)
 - **Real-Time Live Call Streaming:** WebSocket-based 16 kHz audio streaming with sub-second chunk ingestion.
-- **Dual-Engine Threat Fusion:** Combines **Wav2Vec2 Deepfake Detector** (`garystafford/wav2vec2-deepfake-voice-detector`) and custom **Spectrogram CNN** for high-precision synthetic voice classification.
+- **Dual-Engine Threat Fusion:** Combines **Wav2Vec2 Deepfake Detector** (`garystafford/wav2vec2-deepfake-voice-detector`) and custom **Spectrogram CNN** (`spectrogram_cnn_whatsapp.pth`) for high-precision synthetic voice classification.
+- **Pitch-Aware Acoustic Heuristics:** Pitch-sensitive fundamental frequency ($F_0$) heuristics that accurately differentiate natural male ($F_0 < 160\text{ Hz}$) and female vocal fold dynamics from synthetic vocoder artifacts.
 - **Smart Channel Selection:** Automatic fallback between caller tab audio and analyst microphone channels to eliminate silent input delays.
 - **Speech-to-Text Transcription:** Real-time ASR powered by **Faster-Whisper** for conversation logging and intent evaluation.
+
+### 🛡️ Threat Fusion Decision Matrix
+
+| Call / Audio Condition | Primary Voice Clone Engine | Spectrogram Forensics | Authoritative Verdict | UI Badge |
+| :--- | :--- | :--- | :--- | :--- |
+| **1) Human Voice / Live Call** | `Human` ($\ge 90\%$) | `Human` | **`Safe`** | 🟢 Green |
+| **2) AI Voice / Synthetic Live Call** | `Voice Clone` / `AI` | `AI Generated` | **`High Risk`** | 🔴 Red |
+| **3) Voice Clone / Borderline** | `Voice Clone` | `Suspicious` | **`Suspicious`** | 🟡 Yellow |
 
 ### 🔍 Multi-Modal Scam Detection
 - **Text & Intent Classification:** SMS and Email scam detection using NLP intent classifiers, stylometry analysis, and semantic search.
@@ -37,7 +46,7 @@
 ## 🏗️ Architecture & Directory Structure
 
 ```text
-latest-osv-main/
+Operationhackthon/
 ├── backend/
 │   ├── main.py                     # FastAPI server entry point & WebSocket handlers
 │   ├── requirements.txt            # Python dependencies (PyTorch, FastAPI, ChromaDB, etc.)
@@ -80,28 +89,19 @@ latest-osv-main/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Python:** `Python 3.13` (Recommended for Apple Silicon thread-safety)
+- **Python:** `Python 3.13`
 - **Node.js:** `Node.js 18+` & `npm`
 
 ---
 
-### 1️⃣ Setting Up & Running the Backend
+### 1️⃣ Running the Backend
 
-From the project root directory (`latest-osv-main`):
+From the project backend directory:
 
 ```bash
-# 1. Create Python 3.13 virtual environment
-python3.13 -m venv venv313
-
-# 2. Activate virtual environment
-source venv313/bin/activate
-
-# 3. Install backend dependencies
-pip install -r backend/requirements.txt
-
-# 4. Start backend server
 cd backend
-python3 main.py
+source ../venv313/bin/activate  # or activate your python venv
+python main.py
 ```
 
 > **Backend Status:** Server will start at **`http://localhost:8000`**  
@@ -109,18 +109,13 @@ python3 main.py
 
 ---
 
-### 2️⃣ Setting Up & Running the Frontend
+### 2️⃣ Running the Frontend
 
-Open a **new terminal tab/window**:
+Open a **new terminal window**:
 
 ```bash
-# 1. Navigate to frontend folder
 cd frontend
-
-# 2. Install Node packages
 npm install
-
-# 3. Start Next.js development server
 npm run dev
 ```
 
@@ -142,3 +137,4 @@ npm run dev
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for details.
+
