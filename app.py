@@ -1,11 +1,13 @@
 import os
 import sys
 
+# Satisfy Hugging Face ZeroGPU requirements if running on ZeroGPU
 try:
     import spaces
     @spaces.GPU
-    def zero_gpu_init():
-        return True
+    def gpu_warmup():
+        """Satisfies HF ZeroGPU startup check."""
+        return "GPU Ready"
 except Exception:
     pass
 
@@ -28,3 +30,4 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
