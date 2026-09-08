@@ -14,3 +14,7 @@ python-dotenv
 matplotlib
 SpeechRecognition
 sentence-transformers
+torch
+torchaudio
+onnxruntime
+

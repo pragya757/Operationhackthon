@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: operationhackthon-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: PORT
+        value: 8000
