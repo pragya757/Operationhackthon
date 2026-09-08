@@ -1,4 +1,13 @@
 {
-  "buildCommand": "npm run build",
-  "framework": "nextjs"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "name": "fraud-ai-shield",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://localhost:8000/:path*"
+    }
+  ]
 }
