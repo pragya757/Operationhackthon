@@ -1,6 +1,14 @@
 import os
 import sys
 
+try:
+    import spaces
+    @spaces.GPU
+    def zero_gpu_init():
+        return True
+except Exception:
+    pass
+
 # Add backend directory to python path
 backend_dir = os.path.join(os.path.dirname(__file__), "backend")
 if backend_dir not in sys.path:
